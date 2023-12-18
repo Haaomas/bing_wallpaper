@@ -1,0 +1,92 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+# Description : Modifie le fond d'écran en récupérant le wallpaper of the day de Bing via son API
+# Author : Jimmy Barreau
+
+
+# TODO Mieux comprendre le header d'un script
+# FEATURE demander de save le wallpaper avec ces infos dans un BDD Notion via l'api
+# BUG crontab's not working !
+    # service x11-common status
+    # Loaded: masked (/dev/null; bad)
+    # Active: inactive (dead)
+    # Remise à zéro d'ubuntu apparemment
+
+
+# -- Python Lib
+import json
+import os
+import re
+import timeit
+from urllib.request import urlopen, urlretrieve
+from urllib.error import URLError
+
+# -- Const
+SAVE_FOLDER = os.path.expanduser("~/Images/bing_wallpaper_kde")
+BING_API = "http://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=fr-FR"
+
+
+def print_informations(wallpaper_infos):
+    """Display the title and information of the wallpaper in the terminal"""
+    title, info = wallpaper_infos['title'],wallpaper_infos['information']
+    os.system(f"notify-send -i ~/Documents/Dev/custom_cmd/bing.png \
+                            '{title}'\
+                            '{info}'")
+
+
+def apply_wallpaper(image_path):
+    """Apply the wallpaper"""
+    os.system(f"gsettings set org.cinnamon.desktop.background \
+            picture-uri file://{image_path}")
+
+
+def download_wallpaper(wallpaper_info, folder_path):
+    """Create a path for the image and save it"""
+    # BUG Ne prends pas les accents
+    clean_title = re.sub('[^A-Za-z0-9]+', '_', wallpaper_info['title'])
+    full_path = f"{folder_path}/{clean_title}.jpg"
+
+    # TODO Voir pour utiliser request.get() .json() (avoir du json directement)
+    if os.path.exists(folder_path):
+        urlretrieve(f"https://www.bing.com{wallpaper_info['picture']}",
+                    full_path)
+    else:
+        os.mkdir(folder_path)
+        urlretrieve(f"https://www.bing.com{wallpaper_info['picture']}",
+                    full_path)
+
+    apply_wallpaper(full_path)
+    print_informations(wallpaper_info)
+
+
+def bing_wall_cleaner(url):
+    """Clean the data from the url
+    and return the images and infos of the pictures as a dict"""
+
+    # Return a Bytes
+    # TODO Test avec With selon pylint ??
+    try:
+        raw_data = urlopen(url, timeout=1)  # timeout avoid continuous calling
+    except URLError as error :
+        # TODO Consider explicitly re-raising using 'raise URLError(f'Sorry, an error as occur : {error}') from error' (raise-missing-from)
+        raise URLError(f"Sorry, an error as occur : {error}")
+
+    # Turn it to json
+    json_data = json.load(raw_data)['images'][0]
+
+    wallpaper_data = {'title': json_data['title'],
+                    'picture': json_data['url'],
+                    'information': json_data['copyright'],
+                    'more_info_link': json_data['copyrightlink']
+    }
+
+    download_wallpaper(wallpaper_data, SAVE_FOLDER)
+
+
+def main():
+    """Start all the function of the script"""
+    bing_wall_cleaner(BING_API)
+
+
+if __name__ == '__main__':
+    main()
