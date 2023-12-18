@@ -5,6 +5,7 @@
 
 
 # TODO Mieux comprendre le header d'un script
+# TODO Tout encapsuler à l'intérieur d'une class
 # FEATURE demander de save le wallpaper avec ces infos dans un BDD Notion via l'api
 # BUG crontab's not working !
     # service x11-common status
