@@ -5,7 +5,6 @@
 
 
 # TODO Mieux comprendre le header d'un script
-# TODO Tout encapsuler à l'intérieur d'une class
 # FEATURE demander de save le wallpaper avec ces infos dans un BDD Notion via l'api
 # BUG crontab's not working !
     # service x11-common status
@@ -18,13 +17,14 @@
 import json
 import os
 import re
+import sys
 import timeit
 from urllib.request import urlopen, urlretrieve
 from urllib.error import URLError
 
-# -- Const
+# -- Constant
 SAVE_FOLDER = os.path.expanduser("~/Images/bing_wallpaper_kde")
-BING_API = "http://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=fr-FR"
+BING_FR_API = "http://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=fr-FR"
 
 
 def print_informations(wallpaper_infos):
@@ -86,8 +86,12 @@ def bing_wall_cleaner(url):
 
 def main():
     """Start all the function of the script"""
-    bing_wall_cleaner(BING_API)
+    bing_wall_cleaner(BING_FR_API)
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Programme aborted by user", file=sys.stderr)
+        sys.exit(1)
